@@ -121,6 +121,65 @@ fn extra_root_after_script_element_is_kept() {
     );
 }
 
+fn document_children(dom: &RcDom) -> Vec<String> {
+    dom.document
+        .children
+        .borrow()
+        .iter()
+        .filter_map(|node| match &node.data {
+            markup5ever_rcdom::NodeData::Text { contents } => {
+                Some(format!("text:{}", contents.borrow()))
+            },
+            markup5ever_rcdom::NodeData::Element { name, .. } => {
+                Some(format!("element:{}", name.local))
+            },
+            _ => None,
+        })
+        .collect()
+}
+
+#[test]
+fn fragment_keeps_text_around_top_level_elements() {
+    assert_eq!(
+        document_children(&parse_fragment("definition <b>word</b> explanation")),
+        ["text:definition ", "element:b", "text: explanation"]
+    );
+}
+
+#[test]
+fn fragment_round_trips_text_around_top_level_elements() {
+    let mut serialized = Vec::new();
+    let document: SerializableHandle = parse_fragment("definition <b>word</b> explanation")
+        .document
+        .clone()
+        .into();
+    serialize::serialize(&mut serialized, &document, Default::default()).unwrap();
+    assert_eq!(
+        String::from_utf8(serialized).unwrap(),
+        "definition <b>word</b> explanation"
+    );
+}
+
+#[test]
+fn fragment_keeps_whitespace_between_top_level_elements() {
+    assert_eq!(
+        document_children(&parse_fragment("a <b>x</b> c")),
+        ["text:a ", "element:b", "text: c"]
+    );
+    assert_eq!(
+        document_children(&parse_fragment("<b>x</b> <b>y</b>")),
+        ["element:b", "text: ", "element:b"]
+    );
+}
+
+#[test]
+fn document_mode_drops_text_outside_the_root() {
+    let dom = driver::parse_document(RcDom::default(), Default::default())
+        .from_utf8()
+        .one("definition <b>word</b> explanation".as_bytes());
+    assert_eq!(document_children(&dom), ["element:b"]);
+}
+
 fn assert_eq_serialization(text: &'static str, dom: RcDom) {
     let mut serialized = Vec::new();
     let document: SerializableHandle = dom.document.clone().into();

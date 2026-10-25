@@ -538,6 +538,15 @@ where
         XmlProcessResult::Done
     }
 
+    /// Append text to the document itself, for fragment text outside any element.
+    ///
+    /// Only fragment mode reaches this: a single document ignores top-level text
+    /// instead of storing it.
+    fn append_text_to_doc(&self, chars: StrTendril) -> XmlProcessResult<Handle> {
+        self.sink.append(&self.doc_handle, AppendText(chars));
+        XmlProcessResult::Done
+    }
+
     fn tag_in_open_elems(&self, tag: &Tag) -> bool {
         self.open_elems
             .borrow()
@@ -679,6 +688,7 @@ where
                 },
                 Token::Comment(comment) => self.append_comment_to_doc(comment),
                 Token::Pi(pi) => self.append_pi_to_doc(pi),
+                Token::Characters(chars) if self.opts.extra_roots => self.append_text_to_doc(chars),
                 Token::Characters(ref chars) if !any_not_whitespace(chars) => {
                     XmlProcessResult::Done
                 },
