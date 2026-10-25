@@ -17,6 +17,8 @@ rust-version.workspace = true
 [features]
 trace_tokenizer = []
 serde = ["markup5ever/serde"]
+# Surfaces byte-accurate source positions; see markup5ever for full description.
+source-positions = ["markup5ever/source-positions"]
 
 [dependencies]
 markup5ever = { workspace = true }

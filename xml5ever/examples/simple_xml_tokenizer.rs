@@ -23,7 +23,11 @@ struct SimpleTokenPrinter;
 impl TokenSink for SimpleTokenPrinter {
     type Handle = ();
 
-    fn process_token(&self, token: Token) -> ProcessResult<()> {
+    fn process_token(
+        &self,
+        token: Token,
+        _position: xml5ever::SourcePosition,
+    ) -> ProcessResult<()> {
         match token {
             Token::Characters(b) => {
                 println!("TEXT: {}", &*b);

@@ -11,7 +11,7 @@ use std::borrow::Cow;
 
 use crate::tendril::StrTendril;
 use crate::tokenizer::ProcessResult;
-use crate::{Attribute, QualName};
+use crate::{Attribute, QualName, SourcePosition};
 
 pub use self::TagKind::{EmptyTag, EndTag, ShortTag, StartTag};
 
@@ -109,7 +109,7 @@ pub trait TokenSink {
     type Handle;
 
     /// Process a token.
-    fn process_token(&self, token: Token) -> ProcessResult<Self::Handle>;
+    fn process_token(&self, token: Token, position: SourcePosition) -> ProcessResult<Self::Handle>;
 
     /// Signal to the sink that parsing has ended.
     fn end(&self) {}

@@ -10,7 +10,7 @@
 mod types;
 
 use log::{debug, warn};
-use markup5ever::{local_name, namespace_prefix, ns};
+use markup5ever::{local_name, namespace_prefix, ns, SourcePosition};
 use std::borrow::Cow;
 use std::borrow::Cow::Borrowed;
 use std::cell::{Cell, Ref, RefCell};
@@ -161,12 +161,19 @@ impl NamespaceMap {
 
 /// Tree builder options, with an impl for Default.
 #[derive(Copy, Clone, Default)]
-pub struct XmlTreeBuilderOpts {}
+pub struct XmlTreeBuilderOpts {
+    /// Keep parsing extra top-level nodes after the document element closes.
+    ///
+    /// Default `false`: one document element, then the builder enters
+    /// `XmlPhase::End`. `true`: return to `XmlPhase::Start` instead, so
+    /// sibling roots are kept as document children (XML5 fragment recovery).
+    pub extra_roots: bool,
+}
 
 /// The XML tree builder.
 pub struct XmlTreeBuilder<Handle, Sink> {
     /// Configuration options for XmlTreeBuilder
-    _opts: XmlTreeBuilderOpts,
+    opts: XmlTreeBuilderOpts,
 
     /// Consumer of tree modifications.
     pub sink: Sink,
@@ -200,7 +207,7 @@ where
     pub fn new(sink: Sink, opts: XmlTreeBuilderOpts) -> XmlTreeBuilder<Handle, Sink> {
         let doc_handle = sink.get_document();
         XmlTreeBuilder {
-            _opts: opts,
+            opts,
             sink,
             doc_handle,
             open_elems: RefCell::new(vec![]),
@@ -403,7 +410,12 @@ where
 {
     type Handle = Handle;
 
-    fn process_token(&self, token: tokenizer::Token) -> ProcessResult<Self::Handle> {
+    fn process_token(
+        &self,
+        token: tokenizer::Token,
+        position: SourcePosition,
+    ) -> ProcessResult<Self::Handle> {
+        self.sink.set_current_source_position(position);
         // Handle `ParseError` and `DoctypeToken`; convert everything else to the local `Token` type.
         let token = match token {
             tokenizer::Token::ParseError(e) => {
@@ -580,6 +592,18 @@ where
         self.open_elems.borrow().is_empty()
     }
 
+    /// Phase to enter once the document element has closed.
+    ///
+    /// [`XmlPhase::End`] for a single document. With `extra_roots`, [`XmlPhase::Start`]
+    /// so extra top-level elements are kept as document children (XML5 fragment recovery).
+    fn phase_after_root(&self) -> XmlPhase {
+        if self.opts.extra_roots {
+            XmlPhase::Start
+        } else {
+            XmlPhase::End
+        }
+    }
+
     fn pop(&self) -> Handle {
         self.namespace_stack.borrow_mut().pop();
         let node = self
@@ -607,6 +631,10 @@ where
     Handle: Clone,
     Sink: TreeSink<Handle = Handle>,
 {
+    /// Consume one token in the current insertion phase.
+    ///
+    /// Once the document element closes, the phase comes from
+    /// [`Self::phase_after_root`].
     fn step(&self, mode: XmlPhase, token: Token) -> XmlProcessResult<<Self as TokenSink>::Handle> {
         self.debug_step(mode, &token);
 
@@ -644,9 +672,9 @@ where
                         self.process_namespaces(&mut tag);
                         tag
                     };
-                    self.phase.set(XmlPhase::End);
                     let handle = self.append_tag_to_doc(tag);
                     self.sink.pop(&handle);
+                    self.phase.set(self.phase_after_root());
                     XmlProcessResult::Done
                 },
                 Token::Comment(comment) => self.append_comment_to_doc(comment),
@@ -728,20 +756,20 @@ where
                         let script = current_node(&self.open_elems.borrow()).clone();
                         self.close_tag(tag);
                         if self.no_open_elems() {
-                            self.phase.set(XmlPhase::End);
+                            self.phase.set(self.phase_after_root());
                         }
                         return XmlProcessResult::Script(script);
                     }
                     let retval = self.close_tag(tag);
                     if self.no_open_elems() {
-                        self.phase.set(XmlPhase::End);
+                        self.phase.set(self.phase_after_root());
                     }
                     retval
                 },
                 Token::Tag(Tag { kind: ShortTag, .. }) => {
                     self.pop();
                     if self.no_open_elems() {
-                        self.phase.set(XmlPhase::End);
+                        self.phase.set(self.phase_after_root());
                     }
                     XmlProcessResult::Done
                 },

@@ -2,6 +2,7 @@ use markup5ever_rcdom::{RcDom, SerializableHandle};
 use xml5ever::driver;
 use xml5ever::serialize;
 use xml5ever::tendril::TendrilSink;
+use xml5ever::tree_builder::XmlTreeBuilderOpts;
 
 #[test]
 fn el_ns_serialize() {
@@ -71,6 +72,52 @@ fn from_utf8() {
         driver::parse_document(RcDom::default(), Default::default())
             .from_utf8()
             .one("<title>Test".as_bytes()),
+    );
+}
+
+fn document_element_names(dom: &RcDom) -> Vec<String> {
+    dom.document
+        .children
+        .borrow()
+        .iter()
+        .filter_map(|node| match &node.data {
+            markup5ever_rcdom::NodeData::Element { name, .. } => Some(name.local.to_string()),
+            _ => None,
+        })
+        .collect()
+}
+
+fn parse_fragment(input: &str) -> RcDom {
+    let opts = driver::XmlParseOpts {
+        tree_builder: XmlTreeBuilderOpts { extra_roots: true },
+        ..Default::default()
+    };
+    driver::parse_document(RcDom::default(), opts)
+        .from_utf8()
+        .one(input.as_bytes())
+}
+
+#[test]
+fn extra_root_after_closed_element_is_kept() {
+    assert_eq!(
+        document_element_names(&parse_fragment("<h1></h1><p></p>")),
+        ["h1", "p"]
+    );
+}
+
+#[test]
+fn extra_root_after_empty_element_is_kept() {
+    assert_eq!(
+        document_element_names(&parse_fragment("<br/><p></p>")),
+        ["br", "p"]
+    );
+}
+
+#[test]
+fn extra_root_after_script_element_is_kept() {
+    assert_eq!(
+        document_element_names(&parse_fragment("<script></script><p></p>")),
+        ["script", "p"]
     );
 }
 

@@ -24,7 +24,7 @@ use xml5ever::tokenizer::{
     Doctype, EmptyTag, EndTag, Pi, ShortTag, StartTag, Tag, Token, TokenSink, XmlTokenizer,
     XmlTokenizerOpts,
 };
-use xml5ever::{ns, Attribute, LocalName, QualName};
+use xml5ever::{ns, Attribute, LocalName, QualName, SourcePosition};
 
 mod util {
     pub mod find_tests;
@@ -92,7 +92,7 @@ impl TokenLogger {
 impl TokenSink for TokenLogger {
     type Handle = ();
 
-    fn process_token(&self, token: Token) -> ProcessResult<()> {
+    fn process_token(&self, token: Token, _position: SourcePosition) -> ProcessResult<()> {
         match token {
             Token::Characters(characters) => {
                 self.current_str.borrow_mut().push_slice(&characters);
@@ -273,10 +273,11 @@ fn json_to_tokens(js: &Value, exact_errors: bool) -> Vec<Token> {
     for tok in js.as_array().unwrap().iter() {
         match *tok {
             Value::String(ref s) if &s[..] == "ParseError" => {
-                let _ = sink.process_token(Token::ParseError(Borrowed("")));
+                let _ =
+                    sink.process_token(Token::ParseError(Borrowed("")), SourcePosition::default());
             },
             _ => {
-                let _ = sink.process_token(json_to_token(tok));
+                let _ = sink.process_token(json_to_token(tok), SourcePosition::default());
             },
         }
     }

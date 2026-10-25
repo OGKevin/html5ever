@@ -10,10 +10,18 @@
 use crate::tendril::StrTendril;
 use crate::tokenizer::{Doctype, Pi, Tag};
 
+/// Tree-builder insertion mode.
+///
+/// After the document element closes, the builder enters [`End`], or
+/// [`Start`] when `XmlTreeBuilderOpts::extra_roots` is set. [`End`] is also
+/// used for EOF.
 #[derive(PartialEq, Eq, Copy, Clone, Debug)]
 pub enum XmlPhase {
+    /// No current document element. The next start or empty tag is appended as a document child.
     Start,
+    /// A document element is open.
     Main,
+    /// Parsing is finished. Further elements are dropped.
     End,
 }
 

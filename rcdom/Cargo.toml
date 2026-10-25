@@ -22,7 +22,7 @@ tendril = { workspace = true }
 xml5ever = { workspace = true }
 
 [features]
-source-positions = ["html5ever/source-positions"]
+source-positions = ["html5ever/source-positions", "xml5ever/source-positions"]
 
 [dev-dependencies]
 criterion = { workspace = true }

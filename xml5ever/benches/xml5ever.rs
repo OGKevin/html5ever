@@ -17,7 +17,7 @@ struct Sink;
 impl TokenSink for Sink {
     type Handle = ();
 
-    fn process_token(&self, token: Token) -> ProcessResult<()> {
+    fn process_token(&self, token: Token, _position: markup5ever::SourcePosition) -> ProcessResult<()> {
         // Don't use the token, but make sure we don't get
         // optimized out entirely.
         std::hint::black_box(token);
