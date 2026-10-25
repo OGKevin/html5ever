@@ -3,12 +3,12 @@ name = "markup5ever"
 description = "Common code for xml5ever and html5ever"
 documentation = "https://docs.rs/markup5ever"
 categories = [ "parser-implementations", "web-programming" ]
-version.workspace = true
-license.workspace = true
-authors.workspace = true
-repository.workspace = true
-edition.workspace = true
-rust-version.workspace = true
+version = "0.41.0"
+license = "MIT OR Apache-2.0"
+authors = ["The html5ever Project Developers"]
+repository = "https://github.com/servo/html5ever"
+edition = "2021"
+rust-version = "1.85"
 
 [lib]
 path = "lib.rs"
@@ -18,6 +18,6 @@ serde = ["web_atoms/serde"]
 source-positions = []
 
 [dependencies]
-web_atoms = { workspace = true }
-tendril = { workspace = true }
-log = { workspace = true }
+web_atoms = { version = "0.3.0", path = "../web_atoms" }
+tendril = { version = "0.5", path = "../tendril" }
+log = "0.4"

@@ -7,18 +7,18 @@ authors = [
   "Simon Sapin <simon.sapin@exyr.org>",
   "Chris Morgan <me@chrismorgan.info>"
 ]
-license.workspace = true
-repository.workspace = true
-rust-version.workspace = true
-edition.workspace = true
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/servo/html5ever"
+rust-version = "1.85"
+edition = "2021"
 readme = "README.md"
 
 [features]
 encoding_rs = ["dep:encoding_rs"]
 
 [dependencies]
-encoding_rs = { workspace = true, optional = true}
-new_debug_unreachable = { workspace = true }
+encoding_rs = { version = "0.8.12", optional = true}
+new_debug_unreachable = "1.0.2"
 
 [dev-dependencies]
-rand = { workspace = true }
+rand = "0.9"

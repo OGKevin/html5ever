@@ -9,7 +9,7 @@ documentation = "https://docs.rs/web_atoms"
 build = "build.rs"
 categories = [ "web-programming" ]
 edition = "2021"
-rust-version.workspace = true
+rust-version = "1.85"
 
 [lib]
 path = "lib.rs"
@@ -18,9 +18,9 @@ path = "lib.rs"
 serde = ["string_cache/serde_support"]
 
 [dependencies]
-string_cache = { workspace = true }
-phf = { workspace = true }
+string_cache = { version = "0.11.0", default-features = false }
+phf = "0.14"
 
 [build-dependencies]
-string_cache_codegen = { workspace = true }
-phf_codegen = { workspace = true }
+string_cache_codegen = "0.11.0"
+phf_codegen = "0.14"
